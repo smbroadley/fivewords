@@ -65,14 +65,22 @@ fn process(all_words: &String) {
 
     freq.sort_unstable_by_key(|x| x.1);
 
+    if cfg!(debug_assertions) {
+        // print letter frequencies
+        //
+        for fp in freq {
+            println!("{}: {}", fp.0, fp.1);
+        }
+    }
+
     // build bitmask LUT from frequencies. The idea is that each
     // character gets assigned a new bit position, based upon its
     // frequency in the valid words.
     //
     // eg:
-    //   ('a' x 100) : mask_lut[0] = (0b...0000_0000_0000_0001, 0)
-    //   ('e' x 89)  : mask_lut[4] = (0b...0000_0000_0000_0010, 1)
-    //   ('i' x 77)  : mask_lut[8] = (0b...0000_0000_0000_0100, 2)
+    //   ('q' x 100) : mask_lut[0] = (0b...0000_0000_0000_0001, 0)
+    //   ('x' x 310) : mask_lut[4] = (0b...0000_0000_0000_0010, 1)
+    //   ('j' x 350) : mask_lut[8] = (0b...0000_0000_0000_0100, 2)
     //
     let mut mask_lut: [(u32, usize); 26] = Default::default();
 
@@ -80,15 +88,16 @@ fn process(all_words: &String) {
         mask_lut[z.ord()] = (1u32 << i, i);
     }
 
-    // give each word a new mask, where the most-frequent letters
+    // give each word a new mask, where the least-frequent letters
     // appear closer to the LSB (least significant bit) in the
     // bitfield.
     //
-    // eg: "cats"
-    // ('c' x 20)  = 0b...0000_0100_0000_0000
-    // ('a' x 100) = 0b...0000_0000_0000_0001  < most freq' so more LSB
-    // ('t' x 33)  = 0b...0000_0000_0100_0000
-    // ('s' x 40)  = 0b...0000_0000_0000_1000
+    // eg: "cats" (numbers are invented, and not representative)
+    //
+    // ('c' x 989) = 0b...0000_0100_0000_0000
+    // ('a' x 100) = 0b...0000_0000_0000_0001  < least freq' so LSB
+    // ('t' x 340) = 0b...0000_0000_0100_0000
+    // ('s' x 123) = 0b...0000_0000_0000_1000
     //
     // We also stick all words with the same LSB into a bucket, so
     // we can easily look them up. This means we can EFFICIENTLY
